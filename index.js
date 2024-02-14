@@ -34,6 +34,14 @@ app.post("/api/users", (req, res) => {
 	});
 });
 
+app.get("/api/users", (req, res) => {
+	res.json(users);
+});
+// TODO: CHAIN!
+// app.route("/api/users")
+// 	.post((req, res) => {})
+// 	.get((req, res) => {});
+
 const listener = app.listen(process.env.PORT || 3000, () => {
 	console.log("Your app is listening on port " + listener.address().port);
 });
