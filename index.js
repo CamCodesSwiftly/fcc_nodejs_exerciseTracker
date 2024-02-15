@@ -20,27 +20,44 @@ app.get("/", (req, res) => {
 	res.sendFile(__dirname + "/views/index.html");
 });
 
-app.post("/api/users", (req, res) => {
-	const user = {
-		username: req.body.username,
-		_id: generateUniqueId(),
-	};
+// app.post("/api/users", (req, res) => {
+// 	const user = {
+// 		username: req.body.username,
+// 		_id: generateUniqueId(),
+// 	};
 
-	users.push(user);
+// 	users.push(user);
 
-	res.json({
-		username: user.username,
-		_id: user._id,
+// 	res.json({
+// 		username: user.username,
+// 		_id: user._id,
+// 	});
+// });
+
+// app.get("/api/users", (req, res) => {
+// 	res.json(users);
+// });
+
+// * USERS
+app.route("/api/users")
+	//	* CREATE
+	.post((req, res) => {
+		const user = {
+			username: req.body.username,
+			_id: generateUniqueId(),
+		};
+
+		users.push(user);
+
+		res.json({
+			username: user.username,
+			_id: user._id,
+		});
+	})
+	//	* READ
+	.get((req, res) => {
+		res.json(users);
 	});
-});
-
-app.get("/api/users", (req, res) => {
-	res.json(users);
-});
-// TODO: CHAIN!
-// app.route("/api/users")
-// 	.post((req, res) => {})
-// 	.get((req, res) => {});
 
 const listener = app.listen(process.env.PORT || 3000, () => {
 	console.log("Your app is listening on port " + listener.address().port);
