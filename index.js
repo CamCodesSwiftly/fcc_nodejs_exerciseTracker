@@ -8,35 +8,23 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.static("public"));
 
-const users = [
-	{
-		username: "Admin",
-		_id: generateUniqueId(),
-	},
-];
+// Hashmap of users because it is way faster than to find a user later
+const usersMap = new Map();
+const adminID = generateUniqueId();
+usersMap.set(adminID, "Admin");
+
+//!ABANDON LATER
+// const users = [
+// 	{
+// 		username: "Admin",
+// 		_id: generateUniqueId(),
+// 	},
+// ];
 
 app.get("/", (req, res) => {
-	console.log(users);
+	console.log(usersMap);
 	res.sendFile(__dirname + "/views/index.html");
 });
-
-// app.post("/api/users", (req, res) => {
-// 	const user = {
-// 		username: req.body.username,
-// 		_id: generateUniqueId(),
-// 	};
-
-// 	users.push(user);
-
-// 	res.json({
-// 		username: user.username,
-// 		_id: user._id,
-// 	});
-// });
-
-// app.get("/api/users", (req, res) => {
-// 	res.json(users);
-// });
 
 // * USERS
 app.route("/api/users")
@@ -47,7 +35,10 @@ app.route("/api/users")
 			_id: generateUniqueId(),
 		};
 
-		users.push(user);
+		usersMap.set(user._id, user.username);
+
+		//!ABANDON LATER
+		// users.push(user);
 
 		res.json({
 			username: user.username,
@@ -56,7 +47,31 @@ app.route("/api/users")
 	})
 	//	* READ
 	.get((req, res) => {
-		res.json(users);
+		//transform hashmap to json format
+		const usersArray = Array.from(usersMap, ([_id, username]) => ({
+			username,
+			_id,
+		}));
+
+		console.log(usersMap);
+		res.json(usersArray);
+	});
+
+// * EXERCISES
+app.route("/api/users/:_id/exercises")
+	// Create exercise for admin user
+	.post((req, res) => {
+		console.log(req.params._id);
+		res.json({
+			username: "fischen wir gleich raus",
+			description: req.body.description,
+			duration: req.body.duration,
+			date: req.body.date,
+			_id: req.params._id,
+		});
+	})
+	.get((req, res) => {
+		return;
 	});
 
 const listener = app.listen(process.env.PORT || 3000, () => {
