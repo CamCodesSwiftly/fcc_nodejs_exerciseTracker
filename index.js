@@ -22,7 +22,6 @@ usersMap.set(adminID, "Admin");
 // ];
 
 app.get("/", (req, res) => {
-	console.log(usersMap);
 	res.sendFile(__dirname + "/views/index.html");
 });
 
@@ -53,7 +52,6 @@ app.route("/api/users")
 			_id,
 		}));
 
-		console.log(usersMap);
 		res.json(usersArray);
 	});
 
@@ -61,12 +59,29 @@ app.route("/api/users")
 app.route("/api/users/:_id/exercises")
 	// Create exercise for admin user
 	.post((req, res) => {
-		console.log(req.params._id);
+		// Create current Date and empty Date variable
+		let date = "";
+		const currentDate = new Date();
+		const year = currentDate.getFullYear();
+		const month = String(currentDate.getMonth() + 1).padStart(2, "0"); // Months are zero-indexed
+		const day = String(currentDate.getDate()).padStart(2, "0");
+		const currentDateFormatted = `${year}-${month}-${day}`;
+
+		// Check if a date was provided by the user
+		console.log(req.body.date);
+		let dateExists = true;
+		if (!req.body.date) {
+			dateExists = false;
+		} else {
+			dateExists = true;
+			date = req.body.date;
+		}
+
 		res.json({
-			username: "fischen wir gleich raus",
+			username: usersMap.get(req.params._id),
 			description: req.body.description,
 			duration: req.body.duration,
-			date: req.body.date,
+			date: dateExists ? date : currentDateFormatted,
 			_id: req.params._id,
 		});
 	})
