@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
+const { body, validationResult } = require("express-validator");
 const cors = require("cors");
 require("dotenv").config();
 
@@ -9,19 +10,16 @@ app.use(cors());
 app.use(express.static("public"));
 
 // Hashmap of users because it is way faster than to find a user later
-const usersMap = new Map();
 const adminID = generateUniqueId();
-usersMap.set(adminID, "Admin");
-
-//!ABANDON LATER
-// const users = [
-// 	{
-// 		username: "Admin",
-// 		_id: generateUniqueId(),
-// 	},
-// ];
+const users = [
+	{
+		_id: adminID,
+		username: "admin",
+	},
+];
 
 app.get("/", (req, res) => {
+	console.log(users);
 	res.sendFile(__dirname + "/views/index.html");
 });
 
@@ -29,67 +27,51 @@ app.get("/", (req, res) => {
 app.route("/api/users")
 	//	* CREATE
 	.post((req, res) => {
-		const user = {
-			username: req.body.username,
+		const newUser = {
 			_id: generateUniqueId(),
+			username: req.body.username,
 		};
 
-		usersMap.set(user._id, user.username);
+		users.push(newUser);
 
-		//!ABANDON LATER
-		// users.push(user);
-
-		res.json({
-			username: user.username,
-			_id: user._id,
-		});
+		res.json({ ...newUser });
 	})
 	//	* READ
 	.get((req, res) => {
-		//transform hashmap to json format
-		const usersArray = Array.from(usersMap, ([_id, username]) => ({
-			username,
-			_id,
-		}));
-
-		res.json(usersArray);
+		res.json(users);
 	});
 
 // * EXERCISES
-app.route("/api/users/:_id/exercises")
-	// Create exercise for admin user
-	.post((req, res) => {
-		// Create current Date and empty Date variable
-		let date = "";
+app.post("/api/users/:_id/exercises", body("date").notEmpty(), (req, res) => {
+	// handle date
+	let currentDateFormatted = "";
+	if (!validationResult(req).isEmpty()) {
 		const currentDate = new Date();
-		const year = currentDate.getFullYear();
-		const month = String(currentDate.getMonth() + 1).padStart(2, "0"); // Months are zero-indexed
-		const day = String(currentDate.getDate()).padStart(2, "0");
-		const currentDateFormatted = `${year}-${month}-${day}`;
+		currentDateFormatted = currentDate.toDateString();
+	} else {
+		const providedDate = new Date(req.body.date);
+		currentDateFormatted = providedDate.toDateString();
+	}
 
-		// Check if a date was provided by the user
-		console.log(req.body.date);
-		let dateExists = true;
-		if (!req.body.date) {
-			dateExists = false;
-		} else {
-			dateExists = true;
-			date = req.body.date;
+	//find user with id
+	const foundUser = users.find((user) => {
+		console.log(user);
+		if (user._id == req.params._id) {
+			return user;
 		}
-
-		res.json({
-			username: usersMap.get(req.params._id),
-			description: req.body.description,
-			duration: req.body.duration,
-			date: dateExists ? date : currentDateFormatted,
-			_id: req.params._id,
-		});
-	})
-	.get((req, res) => {
-		return;
 	});
+	//create exercise
+	const exercise = {
+		description: req.body.description,
+		duration: parseInt(req.body.duration, 10),
+		date: currentDateFormatted,
+	};
+
+	res.json({ ...foundUser, ...exercise });
+});
 
 const listener = app.listen(process.env.PORT || 3000, () => {
+	console.log(adminID);
 	console.log("Your app is listening on port " + listener.address().port);
 });
 
