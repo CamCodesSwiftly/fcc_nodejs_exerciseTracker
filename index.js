@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-const { body, validationResult } = require("express-validator");
+const { body, query, validationResult } = require("express-validator");
 const cors = require("cors");
 require("dotenv").config();
 
@@ -9,7 +9,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.static("public"));
 
-// Hashmap of users because it is way faster than to find a user later
+//Data and Test Data
 const adminID = generateUniqueId();
 const users = [
 	{
@@ -17,9 +17,7 @@ const users = [
 		username: "admin",
 	},
 ];
-
 const today = new Date().toDateString();
-
 const squatsAdmin = {
 	_id: adminID,
 	duration: 2,
@@ -32,10 +30,26 @@ const pullUpsAdmin = {
 	description: "pull ups",
 	date: today,
 };
+const pushUpsAdmin = {
+	_id: adminID,
+	duration: 2,
+	description: "push ups",
+	date: "Wed Feb 02 2022",
+};
+const crunchesAdmin = {
+	_id: adminID,
+	duration: 2,
+	description: "crunches",
+	date: "Wed Feb 02 2022",
+};
 const exercises = [];
 exercises.push(squatsAdmin);
 exercises.push(pullUpsAdmin);
+exercises.push(pushUpsAdmin);
+exercises.push(crunchesAdmin);
 
+
+// * HOME
 app.get("/", (req, res) => {
 	console.table(users);
 	console.table(exercises);
@@ -91,23 +105,50 @@ app.post("/api/users/:_id/exercises", body("date").notEmpty(), (req, res) => {
 	res.json({ username: foundUser.username, ...exercise });
 });
 
-app.get("/api/users/:_id/logs", (req, res) => {
-	const foundExercises = exercises.filter(
-		(exercise) => exercise._id === req.params._id
-	);
-	const count = foundExercises.length;
-	const foundUser = users.find((user) => user._id === req.params._id);
-	// console.log(foundExercises);
 
-	res.json({
-		...foundUser,
-		count: count,
-		foundExercises,
-	});
-});
+// * EXERCISE LOGS
+app.get(
+	"/api/users/:_id/logs",
+	[
+		query("from").optional().isISO8601().toDate(),
+		query("to").optional().isISO8601().toDate(),
+		query("limit").optional().isInt({ min: 1 }),
+	],
+	(req, res) => {
+		//validate from, to and limit queries
+		if (!validationResult(req).isEmpty()) {
+			return res.status(400).json({ errors: errors.array() });
+		}
+
+		const fromDate = Date.parse(req.query.from);
+		const toDate = Date.parse(req.query.to);
+		const limit = parseInt(req.query.limit, 10);
+
+		// find the exercises, filter and limit them with the queries
+		const foundExercises = exercises
+			.filter((exercise) => exercise._id === req.params._id)
+			.filter(
+				(exercise) => !fromDate || new Date(exercise.date) >= fromDate
+			)
+			.filter((exercise) => !toDate || new Date(exercise.date) <= toDate)
+			.slice(0, limit || exercises.length);
+
+
+		const count = foundExercises.length;
+		const foundUser = users.find((user) => user._id === req.params._id);
+
+		res.json({
+			...foundUser,
+			count: count,
+			log: foundExercises,
+		});
+	}
+);
 
 const listener = app.listen(process.env.PORT || 3000, () => {
-	console.log(`127.0.0.1:3000/api/users/${adminID}/logs`);
+	console.log(
+		`127.0.0.1:3000/api/users/${adminID}/logs?from=2024-01-01&to=2024-02-19&limit=1`
+	);
 	console.log("Your app is listening on port " + listener.address().port);
 });
 
