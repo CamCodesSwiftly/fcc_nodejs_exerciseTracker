@@ -18,7 +18,23 @@ const users = [
 	},
 ];
 
+const today = new Date().toDateString();
+
+const squatsAdmin = {
+	_id: adminID,
+	duration: 2,
+	description: "squats",
+	date: today,
+};
+const pullUpsAdmin = {
+	_id: adminID,
+	duration: 2,
+	description: "pull ups",
+	date: today,
+};
 const exercises = [];
+exercises.push(squatsAdmin);
+exercises.push(pullUpsAdmin);
 
 app.get("/", (req, res) => {
 	console.table(users);
@@ -75,8 +91,23 @@ app.post("/api/users/:_id/exercises", body("date").notEmpty(), (req, res) => {
 	res.json({ username: foundUser.username, ...exercise });
 });
 
+app.get("/api/users/:_id/logs", (req, res) => {
+	const foundExercises = exercises.filter(
+		(exercise) => exercise._id === req.params._id
+	);
+	const count = foundExercises.length;
+	const foundUser = users.find((user) => user._id === req.params._id);
+	// console.log(foundExercises);
+
+	res.json({
+		...foundUser,
+		count: count,
+		foundExercises,
+	});
+});
+
 const listener = app.listen(process.env.PORT || 3000, () => {
-	console.log("adminID", adminID);
+	console.log(`127.0.0.1:3000/api/users/${adminID}/logs`);
 	console.log("Your app is listening on port " + listener.address().port);
 });
 
