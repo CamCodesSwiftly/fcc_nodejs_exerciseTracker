@@ -18,8 +18,11 @@ const users = [
 	},
 ];
 
+const exercises = [];
+
 app.get("/", (req, res) => {
-	console.log(users);
+	console.table(users);
+	console.table(exercises);
 	res.sendFile(__dirname + "/views/index.html");
 });
 
@@ -55,23 +58,25 @@ app.post("/api/users/:_id/exercises", body("date").notEmpty(), (req, res) => {
 
 	//find user with id
 	const foundUser = users.find((user) => {
-		console.log(user);
 		if (user._id == req.params._id) {
 			return user;
 		}
 	});
 	//create exercise
 	const exercise = {
+		_id: foundUser._id,
 		description: req.body.description,
 		duration: parseInt(req.body.duration, 10),
 		date: currentDateFormatted,
 	};
 
-	res.json({ ...foundUser, ...exercise });
+	exercises.push(exercise);
+
+	res.json({ username: foundUser.username, ...exercise });
 });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
-	console.log(adminID);
+	console.log("adminID", adminID);
 	console.log("Your app is listening on port " + listener.address().port);
 });
 
